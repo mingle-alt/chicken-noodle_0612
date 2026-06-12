@@ -1,0 +1,6 @@
+{
+  "name": "현풍닭칼국수 강남역삼점",
+  "description": "한 끼의 식사라도 건강을 생각하는 현풍닭칼국수 강남역삼점의 모바일 퍼스트 홍보 및 예약 랜딩 페이지입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
