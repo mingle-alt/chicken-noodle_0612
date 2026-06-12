@@ -27,10 +27,44 @@ import {
   MessageSquare,
   Flame,
   Info,
-  Timer
+  Timer,
+  Star
 } from 'lucide-react';
 import { STORE_INFO, MENU_ITEMS, PEAK_HOURS, WAITING_TIPS } from './data';
 import { MenuItem, Booking, CartItem, PickupOrder } from './types';
+
+const HERITAGE_MILESTONES = [
+  {
+    year: '1900년대비 대구 현풍',
+    title: '대를 이은 비법 보양 육수',
+    desc: '천연 한방 약재와 신선한 뼈를 사나흘 푹 고아내어 묵직하고 고소한 "순백의 국물"을 담아냈습니다. 촉촉하고 야들야들한 닭살 고명을 올린 한 그릇은 단순한 한 그릇을 넘어 소화가 쉽고 든든한 강사들의 소중한 한 끼였습니다.',
+    secretReward: 'HERITAGE_HONEY'
+  },
+  {
+    year: '천연벌꿀 숙성 발효김치',
+    title: '매콤 칼칼 실비김치의 탄생',
+    desc: '강원도 청정 유기농 고춧가루와 국내산 야생 벌꿀을 저온 숙성해 캡사이신 없이 가미된 건강한 맵싹함을 탄생시켰습니다. 칼국수 국물에 국수를 말아 먹을 때 최고의 하모니를 자랑하며 전국 해장인들을 뒤흔들었습니다.',
+    secretReward: 'SWEET_SPICY'
+  },
+  {
+    year: '삼계수육 국가브랜드 특허',
+    title: '인삼 한 통을 고스란히 영양 가득',
+    desc: '칼국수 면발에 장뇌삼과 대추, 보들보들 고아낸 삼계 통닭 한 마리를 수육 한 상처럼 얹어낸 영양 특허 삼계칼국수가 시그니처로 인정받으며, 매년 여름 초중말복 직장인 영양제로 입소문을 타게 되었습니다.',
+    secretReward: 'SAMGYE_SOUP'
+  },
+  {
+    year: '강남역삼 스마트 가인',
+    title: '혼밥 매니아 & 쾌속 오더 가이드',
+    desc: '바쁜 오피스 현대인을 위해 착석 후 5분 내 초고속 힐링 식사를 완비하고, 1인용 창가 바(Bar)와 콘센트, 옷걸이를 완비해 눈치 없이 실비김치 국물을 흡입할 수 있는 최고의 스마트 힐링 플레이스로 선언되었습니다.',
+    secretReward: 'GANGNAM_SOLO'
+  }
+];
+
+const DEFAULT_FEEDBACKS = [
+  { id: 'f1', name: '역삼동 직장인 한상현', rating: 5, tag: '#매운실비김치', content: '여기가 제 영혼의 해장 성지입니다! 3단계 반반 김치로 딱 올려먹으면 콧잔등에 땀이 나면서 피로가 리세팅되는 느낌이에요. 칼수육 세트 조합이 진짜 대박적 영양 보양식입니다.', date: '2026-06-11' },
+  { id: 'f2', name: '혼밥 마스터 박진아', rating: 5, tag: '#혼밥프렌들리', content: '원래 맛집 혼자 가기 조금 쑥스러운데 여긴 1인 전용 바가 잘 되어 있어서 너무 아늑해요! 더군다나 1인 손님은 웨이팅 프리패스해 주실 때도 있어서 최고의 회전율 인정입니다.', date: '2026-06-11' },
+  { id: 'f3', name: 'IT개발자 이민우', rating: 4.8, tag: '#닭칼수육콤보', content: '삼계칼국수 닭고기가 뼛속까지 야들야들하게 빠지네요. 인삼 냄새도 부담스럽지 않아서 몸보신 제대로 하고 갑니다. 포장 픽업도 전용 용기가 깔끔해서 넘 좋습니다.', date: '2026-06-10' }
+];
 
 export default function App() {
   // Navigation & UI States
@@ -40,6 +74,18 @@ export default function App() {
   // Spice Slider state (1 to 5)
   const [spiceLevel, setSpiceLevel] = useState<number>(3);
   
+  // Web Portal Interactivity States
+  const [heritageIdx, setHeritageIdx] = useState(0);
+  const [combMain, setCombMain] = useState('m1'); // 닭칼국수
+  const [combSide, setCombSide] = useState('sd2'); // 갈비만두
+  const [combSpice, setCombSpice] = useState(3); // 3단계
+  const [unlockedSecrets, setUnlockedSecrets] = useState<string[]>([]);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [fbName, setFbName] = useState('');
+  const [fbContent, setFbContent] = useState('');
+  const [fbRating, setFbRating] = useState(5);
+  const [fbActiveTag, setFbActiveTag] = useState('#매운실비김치');
+
   // Booking state
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingName, setBookingName] = useState('');
@@ -79,9 +125,27 @@ export default function App() {
   useEffect(() => {
     const savedBookings = localStorage.getItem('hyeonpung_bookings');
     const savedOrders = localStorage.getItem('hyeonpung_orders');
+    const savedFeedbacks = localStorage.getItem('hyeonpung_feedbacks');
+    const savedSecrets = localStorage.getItem('hyeonpung_secrets');
     if (savedBookings) setBookings(JSON.parse(savedBookings));
     if (savedOrders) setOrders(JSON.parse(savedOrders));
+    if (savedFeedbacks) {
+      setFeedbacks(JSON.parse(savedFeedbacks));
+    } else {
+      setFeedbacks(DEFAULT_FEEDBACKS);
+    }
+    if (savedSecrets) setUnlockedSecrets(JSON.parse(savedSecrets));
   }, []);
+
+  const saveFeedbacksToLocal = (newFeedbacks: any[]) => {
+    localStorage.setItem('hyeonpung_feedbacks', JSON.stringify(newFeedbacks));
+    setFeedbacks(newFeedbacks);
+  };
+
+  const saveSecretsToLocal = (newSecrets: string[]) => {
+    localStorage.setItem('hyeonpung_secrets', JSON.stringify(newSecrets));
+    setUnlockedSecrets(newSecrets);
+  };
 
   // Sync to LocalStorage function
   const saveBookingToLocal = (newBookings: Booking[]) => {
@@ -414,8 +478,90 @@ export default function App() {
 
   const liveStatus = getSimulatedLiveStatus();
 
+  // Weather recommends configurations
+  const [activeWeather, setActiveWeather] = useState<'rainy' | 'sunny' | 'cold' | 'hot'>('rainy');
+  const getWeatherRecommendation = (weather: typeof activeWeather) => {
+    switch (weather) {
+      case 'rainy':
+        return {
+          title: '비오는 날 촉촉 해장팩',
+          main: 'm1', // 닭칼국수
+          side: 'sd1', // 김치손만두
+          spice: 4,
+          comment: '가마솥 끓는 소리가 빗소리처럼 푸근하게 들리는 날엔, 담백하고 뜨거운 오리지널 닭칼국수에 땀 쑥 빠지는 실비김치 4단계, 속을 따스히 달래주는 영양 가득 김치손만두 조합을 적극 권가장 강추합니다.',
+          badge: '🌧️ 강수 극복 보양조화 제안'
+        };
+      case 'sunny':
+        return {
+          title: '맑은 날 한낮 에너지팩',
+          main: 'm2', // 삼계칼국수
+          side: 'sd2', // 갈비만두
+          spice: 2,
+          comment: '청명하고 화창하지만 기운찬 활력이 필요한 날씨에는 특허받은 영양 삼계칼국수와 달달함 가득 숯불향 갈비만두를 가미해 에너지를 터뜨려주세요. 자극 없이 부드러운 순한 매콤 2단계 김치가 명품입니다.',
+          badge: '☀️ 고단백 에너지 충전 제안'
+        };
+      case 'cold':
+        return {
+          title: '칼바람 철벽 방한팩',
+          main: 'm4', // 닭곰탕
+          side: 'c3', // 한방수육
+          spice: 3,
+          comment: '오슬오슬 손발이 시린 찬 바람 부는 날씨엔, 뜨끈하고 푸짐한 가마솥 닭곰탕 맑은 국물에 한방 약재로 푹 삶은 부드러운 요리수육 한 점을 올리고 3단계 반반 김치로 개운하게 마침표를 찍어보세요.',
+          badge: '❄️ 체온상승 보습 온기 제안'
+        };
+      case 'hot':
+      default:
+        return {
+          title: '불볕더위 시원타격 아이스팩',
+          main: 's1', // 김치말이냉국수
+          side: 'sd2', // 갈비만두
+          spice: 1,
+          comment: '기진맥진 지치고 습한 무더위에는 속까지 얼어붙는 비법 김치말이냉국수가 제격입니다. 아늑하고 시원한 얼음 한술에 따뜻달달한 갈비만두 한입 척 올려먹으면 맵단의 무아지경을 맛보여 드립니다.',
+          badge: '🔥 삼복더위 올킬 아이스 제안'
+        };
+    }
+  };
+
+  const weatherConfig = getWeatherRecommendation(activeWeather);
+
+  // Apply visual combo to mobile simulator live
+  const handleApplyComboToSimulator = (mainId: string, sideId: string, spiceVal: number) => {
+    const mainDish = MENU_ITEMS.find(m => m.id === mainId);
+    const sideDish = MENU_ITEMS.find(m => m.id === sideId);
+    if (mainDish) addToCart(mainDish);
+    if (sideDish) addToCart(sideDish);
+    setSpiceLevel(spiceVal);
+    // Switch to active tab menu to see items instantly
+    setActiveTab('menu');
+    setSelectedCategory('all');
+    // Open cart drawer immediately to let users see the action
+    setIsCartOpen(true);
+  };
+
+  // Add guestbook feedback
+  const handleFeedbackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fbName.trim() || !fbContent.trim()) {
+      alert('성함과 의견을 모두 입력해 주세요!');
+      return;
+    }
+    const newFb = {
+      id: 'fb-' + Date.now(),
+      name: fbName.trim(),
+      rating: fbRating,
+      tag: fbActiveTag,
+      content: fbContent.trim(),
+      date: new Date().toISOString().split('T')[0]
+    };
+    const updated = [newFb, ...feedbacks];
+    saveFeedbacksToLocal(updated);
+    setFbName('');
+    setFbContent('');
+    alert('🎉 단골 한줄평 방명록 쓰기가 성공적으로 완료되었습니다! 웹과 모바일 시스템에 즉각 영구 갱신됩니다.');
+  };
+
   return (
-    <div className="min-h-screen bg-[#efeee9] flex justify-center items-center py-0 md:py-8 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-[#efeee9] flex items-center justify-center py-0 md:py-10 px-0 md:px-4 lg:px-6 font-sans transition-colors duration-300">
       
       {/* Visual background pattern behind the device mock */}
       <div className="fixed inset-0 pointer-events-none opacity-20 overflow-hidden hidden md:block">
@@ -423,8 +569,427 @@ export default function App() {
         <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-gold-300 rounded-full filter blur-[150px] animation-delay-2000"></div>
       </div>
 
-      {/* Target Container: Desktop displays as beautiful smartphone frame, Mobile displays full-screen */}
-      <div className="relative w-full max-w-[440px] md:h-[880px] bg-gold-50 md:rounded-[40px] md:shadow-[0_40px_100px_-20px_rgba(45,45,40,0.45)] overflow-hidden flex flex-col border border-gold-200 md:border-[12px] md:border-gold-800">
+      {/* Main Dual-Layout Workspace Wrapper: Side-by-side on LG screens */}
+      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-6 lg:gap-8 relative z-10 p-0 md:p-2">
+        
+        {/* LEFT PC PORTAL: Branding deck and high-fidelity interactive sandbox (hidden on mobile/tablet, glorious on desktop) */}
+        <div className="hidden lg:flex flex-col w-[600px] xl:w-[650px] bg-[#fdfdfc] border border-gold-200 rounded-[36px] p-6 space-y-5 shadow-xl max-h-[880px] overflow-y-auto no-scrollbar border-b-4 border-r-2">
+          
+          {/* Header section with brand and live weather climate helper */}
+          <div className="space-y-1.5 border-b border-gold-100 pb-4">
+            <div className="flex items-center space-x-2">
+              <span className="bg-[#a33b2f] text-white p-1 px-2.5 rounded-md text-[9px] font-black tracking-wider shadow-sm">OFFICIAL PORTAL</span>
+              <span className="text-[10px] font-mono font-bold text-gold-500">EST. 1990</span>
+            </div>
+            
+            <h2 className="text-xl lg:text-2xl font-black text-neutral-900 tracking-tight font-serif">
+              현풍닭칼국수 <span className="text-gold-600">브랜드 가이드</span>
+            </h2>
+            <p className="text-[11px] text-neutral-500 leading-relaxed">
+              강남역삼점의 공식 웹 프레젠테이션 가이드입니다. 실시간 기상 관측 상황에 반응하여 보양 식단을 최적 매칭하며, 원하시는 한상을 즉시 모바일 시뮬레이터에 연동할 수 있습니다.
+            </p>
+
+            {/* Interactive weather-linked recommendation helper */}
+            <div className="mt-3 p-3.5 bg-gold-50/75 border border-gold-100 rounded-2xl space-y-3.5 shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-neutral-500 tracking-wider block uppercase text-[#a33b2f]">
+                  ⛅ 실시간 인근 기상 맞춤 보양 매칭
+                </span>
+                <span className="text-[9.5px] bg-[#a33b2f] text-white px-2 py-0.5 rounded-full font-bold">
+                  {weatherConfig.badge}
+                </span>
+              </div>
+
+              {/* Climate tab buttons */}
+              <div className="grid grid-cols-4 gap-2">
+                {(['rainy', 'sunny', 'cold', 'hot'] as const).map((w) => {
+                  const isActive = activeWeather === w;
+                  const icons = { rainy: '🌧️', sunny: '☀️', cold: '❄️', hot: '🔥' };
+                  const labels = { rainy: '비오는날', sunny: '화창한날', cold: '찬바람', hot: '무더위' };
+                  return (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => setActiveWeather(w)}
+                      className={`py-1.5 px-0.5 rounded-xl text-center text-[11px] font-black transition-all border flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                        isActive 
+                        ? 'bg-[#a33b2f] text-white border-[#a33b2f] shadow-sm transform scale-102' 
+                        : 'bg-white hover:bg-gold-50 text-neutral-600 border-gold-100'
+                      }`}
+                    >
+                      <span className="text-base">{icons[w]}</span>
+                      <span className="text-[9.5px] font-black">{labels[w]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Recommendation output description */}
+              <div className="bg-white p-3 rounded-xl border border-gold-100 space-y-1.5">
+                <h4 className="text-[11.5px] font-black text-neutral-800 flex items-center gap-1">
+                  💡 {weatherConfig.title} 구성 제안
+                </h4>
+                <p className="text-[10.5px] text-neutral-500 leading-relaxed font-light">
+                  {weatherConfig.comment}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleApplyComboToSimulator(weatherConfig.main, weatherConfig.side, weatherConfig.spice)}
+                  className="w-full py-1.5 bg-neutral-900 hover:bg-neutral-850 text-white font-black text-[10px] rounded-lg transition-colors flex items-center justify-center gap-1 mt-0.5 shadow-sm uppercase cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3 text-yellow-300 fill-yellow-300 animate-pulse" />
+                  <span>이 날씨 스마트 조합 시뮬레이터 적용</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Heritage Timeline explorer section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[12.5px] font-black text-neutral-800 tracking-tight font-serif flex items-center gap-1">
+                📜 36년 가문의 헤리티지 (Heritage Tour)
+              </h3>
+              <span className="text-[9px] text-neutral-400">클릭하여 헤리티지 특전 비밀번호 해제</span>
+            </div>
+            
+            <div className="grid grid-cols-4 gap-2">
+              {HERITAGE_MILESTONES.map((hm, idx) => {
+                const isActive = heritageIdx === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setHeritageIdx(idx);
+                      if (!unlockedSecrets.includes(hm.secretReward)) {
+                        const next = [...unlockedSecrets, hm.secretReward];
+                        saveSecretsToLocal(next);
+                      }
+                    }}
+                    className={`p-2 rounded-xl border text-left transition-all relative overflow-hidden group flex flex-col justify-between h-[74px] cursor-pointer ${
+                      isActive 
+                        ? 'border-[#a33b2f] bg-rose-50/10 ring-1 ring-rose-200' 
+                        : 'border-gold-100 bg-white hover:border-gold-300'
+                    }`}
+                  >
+                    <span className={`text-[8px] font-black tracking-tighter ${isActive ? 'text-[#a33b2f]' : 'text-neutral-400'}`}>
+                      {hm.year}
+                    </span>
+                    <span className="text-[9.5px] font-black text-neutral-800 leading-tight block">
+                      {hm.year.includes('강남') ? '강남역삼점' : hm.title.split(' ')[0]}
+                    </span>
+                    
+                    {/* Tiny animated circle indicator */}
+                    <div className={`absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full transition-transform ${
+                      isActive ? 'bg-[#a33b2f] scale-125' : 'bg-neutral-200 group-hover:bg-gold-400'
+                    }`} />
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Heritage panel expanded details view */}
+            <div className="p-3.5 rounded-2xl border border-dashed border-rose-200 bg-rose-50/5 space-y-1.5 relative overflow-hidden">
+              <div className="absolute right-0 top-0 text-[4rem] font-serif font-black opacity-3 text-rose-900 pointer-events-none select-none -mt-3 -mr-1">
+                玄
+              </div>
+              <h4 className="text-[11.5px] font-black text-[#a33b2f] flex items-center gap-1 font-serif">
+                <Flame className="w-3 h-3 animate-pulse text-[#a33b2f]" /> {HERITAGE_MILESTONES[heritageIdx].title}
+              </h4>
+              <p className="text-[10.5px] text-neutral-600 leading-relaxed font-light">
+                {HERITAGE_MILESTONES[heritageIdx].desc}
+              </p>
+              
+              <div className="p-1 px-2.5 bg-[#a33b2f]/5 rounded-lg border border-[#a33b2f]/10 flex items-center justify-between text-[9px]">
+                <span className="font-extrabold text-[#a33b2f]">🔑 특전 해제: {HERITAGE_MILESTONES[heritageIdx].secretReward}</span>
+                <span className="text-neutral-500">예약 시 기입하시면 김치 특별패키징 혜택</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sandbox Live Meal Combi Harmony score calculator */}
+          <div className="space-y-2">
+            <h3 className="text-[12.5px] font-black text-neutral-800 tracking-tight font-serif flex items-center gap-1">
+              🍱 나만의 최강 보양 한상 메이커 (Sandbox)
+            </h3>
+            
+            <div className="p-3.5 bg-gold-50/50 rounded-2xl border border-gold-100 space-y-3 shadow-inner">
+              <div className="grid grid-cols-2 gap-3">
+                
+                {/* Main Dish dropdown */}
+                <div className="space-y-0.5">
+                  <label className="text-[8.5px] font-black text-neutral-500 block uppercase">1. 대표 보양식사 선택</label>
+                  <select
+                    value={combMain}
+                    onChange={(e) => setCombMain(e.target.value)}
+                    className="w-full text-[11px] font-black p-1.5 bg-white border border-gold-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#a33b2f] cursor-pointer"
+                  >
+                    {MENU_ITEMS.filter(m => m.category === 'main' || m.category === 'summer' || m.category === 'winter').map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({item.price.toLocaleString()}원)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Side Dish dropdown */}
+                <div className="space-y-0.5">
+                  <label className="text-[8.5px] font-black text-neutral-500 block uppercase">2. 찰떡 사이드 선택</label>
+                  <select
+                    value={combSide}
+                    onChange={(e) => setCombSide(e.target.value)}
+                    className="w-full text-[11px] font-black p-1.5 bg-white border border-gold-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#a33b2f] cursor-pointer"
+                  >
+                    {MENU_ITEMS.filter(m => m.category === 'side' || m.id === 'c3').map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({item.price.toLocaleString()}원)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+              </div>
+
+              {/* Spice Level selection bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[8.5px] font-black text-neutral-500">
+                  <span className="uppercase">3. 실비김치 맵스타일 튜닝 : {combSpice}단계</span>
+                  <span className="text-[#a33b2f] font-black">
+                    {combSpice === 1 && '개운한 오리지널'}
+                    {combSpice === 2 && '매콤달콤 순한맛'}
+                    {combSpice === 3 && '황금비율 반반'}
+                    {combSpice === 4 && '땀 쑥 매운맛'}
+                    {combSpice === 5 && '캡사이신 제로 실비'}
+                  </span>
+                </div>
+                
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={combSpice}
+                  onChange={(e) => setCombSpice(parseInt(e.target.value))}
+                  className="w-full accent-[#a33b2f] h-1.5 bg-neutral-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              {/* Harmony scoring screen */}
+              {(() => {
+                const mainItem = MENU_ITEMS.find(m => m.id === combMain);
+                const sideItem = MENU_ITEMS.find(m => m.id === combSide);
+                if (!mainItem || !sideItem) return null;
+                
+                const totalPrice = mainItem.price + sideItem.price;
+                const discountPrice = totalPrice - 1000;
+
+                let score = 95;
+                let description = '보편적으로 든든하게 받쳐주는 가문 비법 한 상 식단';
+                if (combMain === 'm1' && combSide === 'sd2') {
+                  score = 99;
+                  description = '시그니처 매콤칼칼 육수와 불향 가득 달달한 갈비만두의 완벽한 맵단 통합 한상!';
+                } else if (combMain === 'm2' && combSide === 'c3') {
+                  score = 99.5;
+                  description = '인삼대추 통닭 삼계 진함과 한방 미니수육으로 결합한 대한민국 보양 1순위 패키지!';
+                } else if (combMain === 's1' && combSide === 'sd2') {
+                  score = 98;
+                  description = '등줄기에 얼음이 쨍하게 흐르는 김치냉국수와 부드럽고 달달한 갈비만두의 조화!';
+                } else if (combSpice === 5) {
+                  score = 97.2;
+                  description = '활화산 같은 마성 실비김치 한 그릇에 달큰한 고기손만두로 즉시 긴급 소화하는 맵고수 챌린지 한상!';
+                }
+
+                return (
+                  <div className="bg-white p-2.5 rounded-xl border border-gold-200 flex flex-col space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-[11.5px] font-black text-neutral-800">
+                          {mainItem.name} + {sideItem.name}
+                        </h4>
+                        <div className="flex gap-2 text-[8.5px] mt-0.5 font-bold text-neutral-400">
+                          <s>정상가 {(totalPrice).toLocaleString()}원</s>
+                          <span className="text-[#a33b2f] font-black font-sans">포장할인 적용가 {(discountPrice).toLocaleString()}원 (-1,000원 혜택)</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[8.5px] text-neutral-400 font-bold block">궁합도</span>
+                        <span className="text-base font-black text-[#a33b2f] font-mono leading-none">{score}%</span>
+                      </div>
+                    </div>
+
+                    <p className="text-[9.5px] text-neutral-400 leading-normal border-t border-dashed border-gold-100 pt-1.5 font-light">
+                      🚩 <strong>한마디:</strong> {description}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplyComboToSimulator(combMain, combSide, combSpice)}
+                      className="w-full py-2 bg-[#a33b2f] hover:bg-[#8b2f24] text-white font-black text-[11px] rounded-xl transition-all shadow-sm flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5 text-white fill-white animate-pulse" />
+                      <span>이 조합으로 모바일 시뮬레이터 포장주문에 담기</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Symmetrical Hour heatmap explorer */}
+          <div className="space-y-1">
+            <h3 className="text-[12.5px] font-black text-neutral-800 tracking-tight font-serif flex items-center gap-1">
+              📊 시간별 혼잡도 실시간 연동 예측 (Visual Heatmap)
+            </h3>
+            <p className="text-[9.5px] text-neutral-400 font-light leading-none">
+              바 아래 시간대 컬럼을 터치하시면 모바일 앱의 <strong>실시간 대기 플래너</strong>가 즉시 반응하여 최적 솔루션을 찾습니다.
+            </p>
+
+            <div className="flex space-x-1.5 h-11 items-end pt-3">
+              {[
+                { hour: '11:00', busy: 20, wait: '즉시입장', timeStr: '11:00' },
+                { hour: '11:30', busy: 50, wait: '약간대기', timeStr: '11:30' },
+                { hour: '12:00', busy: 95, wait: '15분대기', timeStr: '12:00' },
+                { hour: '12:30', busy: 98, wait: '18분대기', timeStr: '12:30' },
+                { hour: '13:00', busy: 70, wait: '5분 내외', timeStr: '13:00' },
+                { hour: '13:30', busy: 30, wait: '혼밥즉석', timeStr: '13:30' },
+                { hour: '14:00', busy: 15, wait: '매우널널', timeStr: '14:00' },
+                { hour: '17:30', busy: 40, wait: '즉시입장', timeStr: '17:30' },
+                { hour: '18:00', busy: 75, wait: '8분내외', timeStr: '18:00' },
+                { hour: '19:30', busy: 25, wait: '마감여유', timeStr: '19:30' },
+              ].map((hItem) => {
+                const isSelected = planTime === hItem.timeStr;
+                const isPeak = hItem.busy >= 75;
+                const barColor = isPeak ? 'bg-rose-500' : hItem.busy >= 40 ? 'bg-amber-400' : 'bg-emerald-400';
+                return (
+                  <button
+                    key={hItem.hour}
+                    type="button"
+                    onClick={() => {
+                      setPlanTime(hItem.timeStr);
+                      // Set active mobile tab to wait section to demonstrate linkage
+                      setActiveTab('wait');
+                    }}
+                    className="flex-1 flex flex-col justify-end items-center h-full group focus:outline-none cursor-pointer"
+                  >
+                    <span className="text-[7px] text-neutral-400 scale-90 font-mono opacity-0 group-hover:opacity-100 transition-opacity leading-none select-none">
+                      {hItem.wait}
+                    </span>
+                    <div 
+                      className={`w-full rounded-t-sm transition-all duration-300 relative ${
+                        isSelected ? 'origin-bottom ring-2 ring-neutral-900 border-t border-white shadow-md' : 'opacity-80 group-hover:opacity-100 hover:scale-x-105'
+                      } ${barColor}`} 
+                      style={{ height: `${hItem.busy * 0.72}%` }} 
+                    />
+                    <span className={`text-[8.5px] scale-90 mt-1 font-mono hover:font-black ${isSelected ? 'text-[#a33b2f] font-black' : 'text-neutral-500'}`}>
+                      {hItem.hour}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Guestbook Submission and View Lists */}
+          <div className="space-y-3 pt-1">
+            <h3 className="text-[12.5px] font-black text-neutral-800 tracking-tight font-serif flex items-center justify-between">
+              <span>✍️ 강남역삼 평생 단골 방명록</span>
+              <span className="text-[9.5px] text-neutral-400 font-sans font-light">리뷰 작성시 모바일 가이드 자동 갱신</span>
+            </h3>
+
+            {/* Scrolling review list */}
+            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 select-none border-b border-gold-100 pb-2 custom-scrollbar">
+              {feedbacks.length === 0 ? (
+                <div className="text-center py-4 text-xs text-neutral-400">등록된 단골 평이 없습니다. 첫 의견을 작성해보세요!</div>
+              ) : (
+                feedbacks.map((f, fIdx) => (
+                  <div key={f.id || fIdx} className="p-2.5 bg-neutral-50 rounded-2xl border border-gold-100/60 flex flex-col space-y-1 text-xs">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-extrabold text-neutral-800 text-[11px]">{f.name}</span>
+                        <span className="text-[8px] bg-gold-100 text-[#a33b2f] px-1.5 py-0.2 rounded-sm font-black scale-90">{f.tag}</span>
+                      </div>
+                      <div className="flex items-center text-amber-500 font-mono text-[9.5px] space-x-0.5">
+                        {'★'.repeat(Math.round(f.rating))}
+                        <span className="text-neutral-400 font-mono text-[8.5px] ml-1">({f.rating})</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 font-light leading-relaxed">{f.content}</p>
+                    <span className="text-[8px] text-neutral-400 font-mono self-end pt-0.5">{f.date}</span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Quick Guestbook submit form */}
+            <form onSubmit={handleFeedbackSubmit} className="space-y-2 bg-gold-50/15 p-3 rounded-2xl border border-dashed border-gold-200">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-1 space-y-0.5">
+                  <label className="text-[8.5px] font-black text-neutral-500 block">장인 단골 성함</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="예: 최기혁"
+                    value={fbName}
+                    onChange={(e) => setFbName(e.target.value)}
+                    className="w-full text-[10.5px] p-1 bg-white border border-gold-150 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#a33b2f]"
+                  />
+                </div>
+
+                <div className="col-span-1 space-y-0.5">
+                  <label className="text-[8.5px] font-black text-neutral-500 block">김치 키워드</label>
+                  <select
+                    value={fbActiveTag}
+                    onChange={(e) => setFbActiveTag(e.target.value)}
+                    className="w-full text-[10.5px] p-1 bg-white border border-gold-150 rounded-lg focus:outline-none cursor-pointer"
+                  >
+                    <option value="#매운실비김치">#매운실비김치 🌶️</option>
+                    <option value="#혼밥프렌들리">#혼밥프렌들리 😎</option>
+                    <option value="#닭칼수육콤보">#닭칼수육콤보 🍖</option>
+                    <option value="#삼계보양갑">#삼계보양갑 🐔</option>
+                  </select>
+                </div>
+
+                <div className="col-span-1 space-y-0.5">
+                  <label className="text-[8.5px] font-black text-neutral-500 block">맛 만족도</label>
+                  <select
+                    value={fbRating}
+                    onChange={(e) => setFbRating(parseFloat(e.target.value))}
+                    className="w-full text-[10.5px] p-1 bg-white border border-gold-150 rounded-lg focus:outline-none cursor-pointer"
+                  >
+                    <option value="5">★★★★★ (5.0)</option>
+                    <option value="4.5">★★★★☆ (4.5)</option>
+                    <option value="4">★★★★ (4.0)</option>
+                    <option value="3">★★★ (3.0)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-0.5">
+                <label className="text-[8.5px] font-black text-neutral-500 block">단골 한줄평 의견작성 (최대 100자)</label>
+                <div className="flex gap-2 items-end">
+                  <textarea
+                    required
+                    maxLength={100}
+                    placeholder="예약/식사하면서 좋았던 점을 적어 다른 해장러에게 전수해보세요!"
+                    value={fbContent}
+                    onChange={(e) => setFbContent(e.target.value)}
+                    className="flex-1 text-[10px] p-1.5 bg-white border border-gold-150 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#a33b2f] h-11 resize-none leading-normal font-light"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-[#a33b2f] hover:bg-[#8b2f24] text-white p-1.5 px-3.5 rounded-xl text-[10.5px] font-black transition-colors self-end h-9 shadow-sm cursor-pointer flex-shrink-0"
+                  >
+                    등록하기
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        {/* RIGHT DEVICE SIMULATOR: High Fidelity Smartphone Mock Container */}
+        <div className="relative w-full max-w-[420px] mx-auto lg:mx-0 md:h-[880px] h-[calc(100vh)] bg-gold-50 md:rounded-[40px] md:shadow-[0_40px_100px_-20px_rgba(45,45,40,0.45)] overflow-hidden flex flex-col border border-gold-200 md:border-[12px] md:border-gold-800 shrink-0">
         
         {/* Smartphone top notched bezel for desktop frame */}
         <div className="hidden md:flex absolute top-0 left-0 right-0 h-6 bg-gold-800 z-[100] justify-center items-center">
@@ -1728,6 +2293,8 @@ export default function App() {
             </span>
           </motion.button>
         )}
+
+      </div>
 
       </div>
 
